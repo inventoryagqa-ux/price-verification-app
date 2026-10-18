@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#123b67">
+  <title>Price Verification</title>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #123b67;
+      --primary-dark: #0b2948;
+      --background: #f3f6fa;
+      --border: #d9e1eb;
+      --text: #1f2937;
+      --muted: #64748b;
+      --success: #16803c;
+      --danger: #c62828;
+      --warning: #b76e00;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      background: var(--background);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 15px;
+    }
+
+    .container {
+      max-width: 650px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: var(--primary);
+      color: white;
+      padding: 22px 18px;
+      border-radius: 14px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .header h1 {
+      margin: 0 0 7px;
+      font-size: 24px;
+    }
+
+    .header p {
+      margin: 0;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 7px rgba(20, 40, 70, 0.04);
+    }
+
+    .card h2 {
+      margin: 0 0 15px;
+      font-size: 18px;
+      color: var(--primary);
+    }
+
+    label {
+      display: block;
+      margin: 13px 0 6px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    input,
+    textarea {
+      display: block;
+      width: 100%;
+      min-height: 44px;
+      padding: 11px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font: inherit;
+      background: white;
+      color: var(--text);
+    }
+
+    textarea {
+      min-height: 75px;
+      resize: vertical;
+    }
+
+    input:focus,
+    textarea:focus {
+      outline: 2px solid #9fc5f1;
+      border-color: var(--primary);
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 12px 14px;
+      min-height: 44px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .primary-btn {
+      color: white;
+      background: var(--primary);
+    }
+
+    .primary-btn:hover {
+      background: var(--primary-dark);
+    }
+
+    .secondary-btn {
+      background: #e8edf4;
+      color: #26364a;
+    }
+
+    .success-btn {
+      background: var(--success);
+      color: white;
+    }
+
+    .danger-btn {
+      background: var(--danger);
+      color: white;
+    }
+
+    .warning-btn {
+      background: var(--warning);
+      color: white;
+    }
+
+    .full-btn {
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 9px;
+      margin-top: 10px;
+    }
+
+    .button-row button {
+      flex: 1;
+      min-width: 0;
+    }
+
+    #reader {
+      width: 100%;
+      overflow: hidden;
+      border-radius: 10px;
+      margin-top: 12px;
+    }
+
+    #reader video {
+      border-radius: 10px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 8px 0 0;
+    }
+
+    .status {
+      display: none;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .status.info {
+      display: block;
+      background: #eaf2ff;
+      color: #174a83;
+    }
+
+    .status.success {
+      display: block;
+      background: #e8f6ec;
+      color: #176534;
+    }
+
+    .status.error {
+      display: block;
+      background: #ffeded;
+      color: #a61b1b;
+    }
+
+    .status.warning {
+      display: block;
+      background: #fff5df;
+      color: #805000;
+    }
+
+    .item-card {
+      display: none;
+    }
+
+    .item-row {
+      padding: 11px 0;
+      border-bottom: 1px solid #edf0f4;
+    }
+
+    .item-row:last-child {
+      border-bottom: none;
+    }
+
+    .item-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .item-value {
+      font-size: 15px;
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    .price {
+      color: var(--success);
+      font-size: 25px;
+      font-weight: 800;
+    }
+
+    .result-buttons {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 9px;
+      margin-top: 15px;
+    }
+
+    .result-buttons button {
+      width: 100%;
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 10px 0 18px;
+    }
+
+    @media (max-width: 420px) {
+      body {
+        padding: 10px;
+      }
+
+      .card {
+        padding: 14px;
+      }
+
+      .header h1 {
+        font-size: 21px;
+      }
+
+      .button-row {
+        gap: 7px;
+      }
+
+      .button-row button {
+        padding: 11px 7px;
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+
+    <header class="header">
+      <h1>Price Verification</h1>
+      <p>Barcode scanning · Retail price checking · Verification records</p>
+    </header>
+
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+
+    <section class="card">
+      <h2>1. Staff Information</h2>
+
+      <label for="staff">Staff Number + Name</label>
+      <input
+        id="staff"
+        type="text"
+        placeholder="Example: 9999 John"
+        autocomplete="name"
+        maxlength="100"
+        required
+      >
+      <p class="hint">Enter your staff number and name before starting verification.</p>
+    </section>
+
+    <section class="card">
+      <h2>2. Scan or Enter Barcode</h2>
+
+      <button id="startCameraBtn" class="primary-btn full-btn" type="button">
+        Scan Barcode Using Camera
+      </button>
+
+      <div id="reader"></div>
+
+      <button
+        id="stopCameraBtn"
+        class="secondary-btn full-btn"
+        type="button"
+        hidden
+      >
+        Stop Camera
+      </button>
+
+      <p class="hint">
+        Allow camera permission when prompted. On a phone, use the rear camera
+        to scan the product barcode.
+      </p>
+
+      <label for="barcode">Barcode</label>
+      <input
+        id="barcode"
+        type="text"
+        inputmode="numeric"
+        placeholder="Scan or enter barcode"
+        autocomplete="off"
+      >
+
+      <button id="searchBtn" class="primary-btn full-btn" type="button">
+        Search Barcode
+      </button>
+    </section>
+
+    <section id="itemCard" class="card item-card">
+      <h2>3. Item Details</h2>
+
+      <div class="item-row">
+        <div class="item-label">Barcode</div>
+        <div id="itemBarcode" class="item-value"></div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-label">Group Name</div>
+        <div id="itemGroup" class="item-value"></div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-label">Item Description</div>
+        <div id="itemDescription" class="item-value"></div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-label">Master Retail Price</div>
+        <div id="itemPrice" class="price"></div>
+      </div>
+    </section>
+
+    <section id="verificationCard" class="card item-card">
+      <h2>4. Verify Shelf Price Tag</h2>
+
+      <label for="tagPrice">Price Printed on Tag (Optional)</label>
+      <input
+        id="tagPrice"
+        type="number"
+        inputmode="decimal"
+        min="0"
+        step="0.01"
+        placeholder="Enter tag price"
+      >
+
+      <label for="remarks">Remarks (Optional)</label>
+      <textarea
+        id="remarks"
+        maxlength="500"
+        placeholder="Enter any additional details"
+      ></textarea>
+
+      <div class="result-buttons">
+        <button id="correctBtn" class="success-btn" type="button">
+          CORRECT — Price Matches
+        </button>
+
+        <button id="wrongBtn" class="danger-btn" type="button">
+          WRONG TAG — Price Mismatch
+        </button>
+
+        <button id="missingBtn" class="warning-btn" type="button">
+          MISSING TAG — No Price Tag
+        </button>
+      </div>
+
+      <p class="hint">
+        Select the appropriate result to save the verification to Google Sheets.
+      </p>
+    </section>
+
+    <div class="footer">
+      Price Verification System
+    </div>
+
+  </main>
+
+  <script>
+    "use strict";
+
+    // =========================================================
+    // CONFIGURATION
+    // =========================================================
+
+    const API_URL =
+      "https://script.google.com/macros/s/AKfycbx-knUul9MbdSUEV2WMItF8kQyJr_BtC-dw1OvFbYsu8vcftVytXXJy5NTo0Mt1n9TKpA/exec";
+
+    // =========================================================
+    // ELEMENTS AND STATE
+    // =========================================================
+
+    const $ = (id) => document.getElementById(id);
+
+    const statusBox = $("status");
+    const barcodeInput = $("barcode");
+    const staffInput = $("staff");
+    const itemCard = $("itemCard");
+    const verificationCard = $("verificationCard");
+
+    let currentItem = null;
+    let scanner = null;
+    let cameraRunning = false;
+    let lookupInProgress = false;
+    let saveInProgress = false;
+    let requestCounter = 0;
+
+    const resultButtons = [
+      $("correctBtn"),
+      $("wrongBtn"),
+      $("missingBtn")
+    ];
+
+    // =========================================================
+    // STATUS MESSAGES
+    // =========================================================
+
+    function showStatus(message, type = "info") {
+      statusBox.textContent = message;
+      statusBox.className = "status " + type;
+    }
+
+    function clearStatus() {
+      statusBox.textContent = "";
+      statusBox.className = "status";
+    }
+
+    // =========================================================
+    // JSONP API CONNECTION
+    // Allows GitHub Pages to call Google Apps Script without
+    // relying on browser CORS permission for a normal fetch().
+    // =========================================================
+
+    function callApi(params) {
+      return new Promise((resolve, reject) => {
+        const callbackName =
+          "priceVerifyCallback_" +
+          Date.now() + "_" +
+          Math.random().toString(36).slice(2);
+
+        const script = document.createElement("script");
+        const url = new URL(API_URL);
+
+        let finished = false;
+        let timeoutId;
+
+        function cleanup() {
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
+
+          script.remove();
+
+          try {
+            delete window[callbackName];
+          } catch (_) {
+            window[callbackName] = undefined;
+          }
+        }
+
+        function finish(error, result) {
+          if (finished) return;
+
+          finished = true;
+          cleanup();
+
+          if (error) {
+            reject(error);
+          } else {
+            resolve(result);
+          }
+        }
+
+        window[callbackName] = function (result) {
+          finish(null, result);
+        };
+
+        url.searchParams.set("callback", callbackName);
+
+        Object.keys(params).forEach((key) => {
+          const value = params[key];
+
+          if (value !== undefined && value !== null) {
+            url.searchParams.set(key, String(value));
+          }
+        });
+
+        script.async = true;
+
+        script.onerror = function () {
+          finish(
+            new Error(
+              "Unable to contact the verification server. " +
+              "Check your internet connection or server deployment."
+            )
+          );
+        };
+
+        timeoutId = setTimeout(() => {
+          finish(
+            new Error(
+              "The server did not respond in time. Please try again."
+            )
+          );
+        }, 20000);
+
+        script.src = url.toString();
+        document.head.appendChild(script);
+      });
+    }
+
+    // =========================================================
+    // ITEM DISPLAY
+    // =========================================================
+
+    function clearItem() {
+      currentItem = null;
+      itemCard.style.display = "none";
+      verificationCard.style.display = "none";
+
+      $("itemBarcode").textContent = "";
+      $("itemGroup").textContent = "";
+      $("itemDescription").textContent = "";
+      $("itemPrice").textContent = "";
+
+      $("tagPrice").value = "";
+      $("remarks").value = "";
+    }
+
+    function displayItem(item) {
+      $("itemBarcode").textContent = item.barcode || "";
+      $("itemGroup").textContent = item.groupName || "—";
+      $("itemDescription").textContent = item.description || "—";
+      $("itemPrice").textContent = item.retailPrice || "—";
+
+      itemCard.style.display = "block";
+      verificationCard.style.display = "block";
+    }
+
+    // =========================================================
+    // SEARCH BARCODE
+    // =========================================================
+
+    async function searchBarcode() {
+      if (lookupInProgress) return;
+
+      const barcode = barcodeInput.value.trim();
+
+      if (!barcode) {
+        showStatus("Please scan or enter a barcode.", "warning");
+        barcodeInput.focus();
+        return;
+      }
+
+      const requestId = ++requestCounter;
+
+      lookupInProgress = true;
+      $("searchBtn").disabled = true;
+      clearItem();
+
+      showStatus("Searching barcode. Please wait...", "info");
+
+      try {
+        const result = await callApi({
+          action: "search",
+          barcode: barcode
+        });
+
+        // Ignore a response if a newer search was initiated.
+        if (requestId !== requestCounter) return;
+
+        if (!result || !result.found) {
+          clearItem();
+          showStatus(
+            result && result.message
+              ? result.message
+              : "Barcode not found in the master list.",
+            "error"
+          );
+          return;
+        }
+
+        currentItem = result;
+        displayItem(result);
+
+        showStatus("Item found. Check the shelf price tag.", "success");
+
+      } catch (error) {
+        if (requestId === requestCounter) {
+          showStatus(
+            error.message || "Unable to search barcode.",
+            "error"
+          );
+        }
+      } finally {
+        if (requestId === requestCounter) {
+          lookupInProgress = false;
+          $("searchBtn").disabled = false;
+        }
+      }
+    }
+
+    // =========================================================
+    // SAVE VERIFICATION
+    // =========================================================
+
+    async function saveVerification(resultType) {
+      if (saveInProgress) return;
+
+      const staff = staffInput.value.trim();
+
+      if (!staff) {
+        showStatus(
+          "Please enter your Staff Number + Name before saving.",
+          "warning"
+        );
+        staffInput.focus();
+        return;
+      }
+
+      if (!currentItem) {
+        showStatus("Please search for a valid barcode first.", "warning");
+        return;
+      }
+
+      const tagPrice = $("tagPrice").value.trim();
+
+      if (resultType === "WRONG TAG" && tagPrice === "") {
+        showStatus(
+          "Please enter the price printed on the tag for a WRONG TAG result.",
+          "warning"
+        );
+        $("tagPrice").focus();
+        return;
+      }
+
+      if (tagPrice !== "" && (!Number.isFinite(Number(tagPrice)) ||
+          Number(tagPrice) < 0)) {
+        showStatus("Please enter a valid tag price.", "warning");
+        $("tagPrice").focus();
+        return;
+      }
+
+      if (resultType === "CORRECT" && tagPrice !== "") {
+        const masterPrice = Number(
+          String(currentItem.retailPrice || "").replace(/,/g, "")
+        );
+
+        if (
+          Number.isFinite(masterPrice) &&
+          Math.abs(Number(tagPrice) - masterPrice) > 0.00001
+        ) {
+          showStatus(
+            "The tag price differs from the master price. " +
+            "Please verify the result before saving.",
+            "warning"
+          );
+          return;
+        }
+      }
+
+      const data = {
+        staff: staff,
+        barcode: currentItem.barcode || barcodeInput.value.trim(),
+        groupName: currentItem.groupName || "",
+        description: currentItem.description || "",
+        retailPrice: currentItem.retailPrice || "",
+        tagPrice: tagPrice,
+        result: resultType,
+        remarks: $("remarks").value.trim()
+      };
+
+      saveInProgress = true;
+      resultButtons.forEach(button => button.disabled = true);
+
+      showStatus("Saving verification to Google Sheets...", "info");
+
+      try {
+        const response = await callApi({
+          action: "save",
+          data: JSON.stringify(data)
+        });
+
+        if (!response || response.success !== true) {
+          throw new Error(
+            response && response.message
+              ? response.message
+              : "The server could not save this verification."
+          );
+        }
+
+        showStatus(
+          (response.message || "Verification saved successfully.") +
+          " You can scan the next item.",
+          "success"
+        );
+
+        barcodeInput.value = "";
+        clearItem();
+        barcodeInput.focus();
+
+      } catch (error) {
+        showStatus(
+          (error.message || "Unable to save verification.") +
+          " Please retry only after checking whether the previous record was saved.",
+          "error"
+        );
+      } finally {
+        saveInProgress = false;
+        resultButtons.forEach(button => button.disabled = false);
+      }
+    }
+
+    // =========================================================
+    // CAMERA SCANNER
+    // =========================================================
+
+    async function startCamera() {
+      if (cameraRunning) return;
+
+      if (typeof Html5Qrcode === "undefined") {
+        showStatus(
+          "The barcode scanner library could not load. " +
+          "Check your internet connection and reload the page.",
+          "error"
+        );
+        return;
+      }
+
+      $("startCameraBtn").disabled = true;
+      showStatus("Opening camera...", "info");
+
+      try {
+        if (!scanner) {
+          scanner = new Html5Qrcode("reader");
+        }
+
+        await scanner.start(
+          { facingMode: "environment" },
+          {
+            fps: 10,
+            qrbox: function (viewWidth, viewHeight) {
+              const width = Math.max(
+                180,
+                Math.min(320, Math.floor(viewWidth * 0.85))
+              );
+
+              const height = Math.max(
+                90,
+                Math.min(160, Math.floor(viewHeight * 0.35))
+              );
+
+              return { width, height };
+            },
+            aspectRatio: 1.5,
+            formatsToSupport: [
+              Html5QrcodeSupportedFormats.EAN_13,
+              Html5QrcodeSupportedFormats.EAN_8,
+              Html5QrcodeSupportedFormats.UPC_A,
+              Html5QrcodeSupportedFormats.UPC_E,
+              Html5QrcodeSupportedFormats.CODE_128,
+              Html5QrcodeSupportedFormats.CODE_39,
+              Html5QrcodeSupportedFormats.ITF
+            ]
+          },
+          async function (decodedText) {
+            barcodeInput.value = decodedText;
+            showStatus("Barcode scanned. Looking up item...", "info");
+
+            await stopCamera();
+            await searchBarcode();
+          },
+          function () {
+            // Normal scanner misses are expected while positioning a barcode.
+          }
+        );
+
+        cameraRunning = true;
+        $("stopCameraBtn").hidden = false;
+        showStatus("Camera is active. Position the barcode inside the box.", "info");
+
+      } catch (error) {
+        cameraRunning = false;
+
+        showStatus(
+          "Unable to start the camera. Check the browser's camera permission, " +
+          "ensure the page is opened using HTTPS, and try again. Details: " +
+          (error && error.message ? error.message : String(error)),
+          "error"
+        );
+      } finally {
+        $("startCameraBtn").disabled = false;
+      }
+    }
+
+    async function stopCamera() {
+      if (!scanner || !cameraRunning) {
+        $("stopCameraBtn").hidden = true;
+        return;
+      }
+
+      try {
+        await scanner.stop();
+      } catch (_) {
+        // Continue cleanup if the camera has already stopped.
+      }
+
+      cameraRunning = false;
+      $("stopCameraBtn").hidden = true;
+    }
+
+    // =========================================================
+    // EVENT HANDLERS
+    // =========================================================
+
+    $("searchBtn").addEventListener("click", searchBarcode);
+
+    barcodeInput.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        searchBarcode();
+      }
+    });
+
+    $("startCameraBtn").addEventListener("click", startCamera);
+    $("stopCameraBtn").addEventListener("click", stopCamera);
+
+    $("correctBtn").addEventListener("click", function () {
+      saveVerification("CORRECT");
+    });
+
+    $("wrongBtn").addEventListener("click", function () {
+      saveVerification("WRONG TAG");
+    });
+
+    $("missingBtn").addEventListener("click", function () {
+      saveVerification("MISSING TAG");
+    });
+
+    window.addEventListener("pagehide", function () {
+      if (scanner && cameraRunning) {
+        scanner.stop().catch(function () {});
+      }
+    });
+
+    // =========================================================
+    // INITIALIZATION
+    // =========================================================
+
+    clearItem();
+    showStatus("Enter your staff details to begin.", "info");
+  </script>
+</body>
+</html>
