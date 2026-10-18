@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#123b63">
   <title>Price Verification</title>
 
@@ -12,9 +12,7 @@
   <style>
     :root {
       --primary: #123b63;
-      --primary-light: #eaf2fb;
-      --success: #167747;
-      --danger: #b42318;
+      --light: #eaf2fb;
       --border: #d8e0e9;
       --background: #f3f6fa;
       --text: #172b42;
@@ -26,30 +24,21 @@
       margin: 0;
       background: var(--background);
       color: var(--text);
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: Arial, sans-serif;
       font-size: 15px;
     }
 
     header {
       background: var(--primary);
       color: white;
-      padding: 19px 16px;
       text-align: center;
+      padding: 19px 15px;
     }
 
-    header h1 {
-      font-size: 23px;
-      margin: 0 0 6px;
-    }
-
-    header p {
-      margin: 0;
-      font-size: 13px;
-      opacity: .9;
-    }
+    header h1 { margin: 0 0 6px; font-size: 23px; }
+    header p { margin: 0; font-size: 13px; }
 
     main {
-      width: 100%;
       max-width: 650px;
       margin: auto;
       padding: 14px;
@@ -58,83 +47,61 @@
     .card {
       background: white;
       padding: 17px;
-      border-radius: 13px;
+      border-radius: 12px;
       margin-bottom: 14px;
-      box-shadow: 0 2px 8px rgba(20, 40, 70, .06);
+      box-shadow: 0 2px 8px #1428460f;
     }
 
-    h2 {
-      font-size: 17px;
-      margin: 0 0 14px;
-    }
+    h2 { font-size: 17px; margin: 0 0 14px; }
 
     label {
       display: block;
       font-size: 13px;
-      font-weight: 700;
+      font-weight: bold;
       margin: 12px 0 6px;
     }
 
     input, select, textarea {
-      display: block;
       width: 100%;
       padding: 12px;
       border: 1px solid var(--border);
       border-radius: 8px;
       background: white;
-      color: var(--text);
       font-size: 16px;
       min-height: 45px;
     }
 
-    textarea {
-      resize: vertical;
-      min-height: 70px;
-    }
+    textarea { min-height: 70px; }
 
-    input[readonly] {
-      background: #f0f3f7;
-    }
+    input[readonly] { background: #f0f3f7; }
 
     button {
       width: 100%;
       min-height: 46px;
+      padding: 12px;
+      margin-top: 10px;
       border: none;
       border-radius: 8px;
-      padding: 12px;
       font-size: 15px;
-      font-weight: 700;
+      font-weight: bold;
       cursor: pointer;
-      margin-top: 10px;
     }
 
-    button:disabled {
-      opacity: .55;
-      cursor: not-allowed;
-    }
+    button:disabled { opacity: .55; }
 
     .primary { background: var(--primary); color: white; }
-    .secondary { background: var(--primary-light); color: var(--primary); }
-    .danger { background: #fdecea; color: var(--danger); }
+    .secondary { background: var(--light); color: var(--primary); }
 
     #reader {
       width: 100%;
       overflow: hidden;
       border-radius: 10px;
       background: #f0f3f7;
-      min-height: 30px;
     }
 
     #reader video {
       width: 100% !important;
       border-radius: 10px;
-    }
-
-    .hint {
-      color: #5d6b7b;
-      font-size: 12px;
-      line-height: 1.5;
-      margin: 9px 0 0;
     }
 
     #status {
@@ -151,39 +118,17 @@
     #status.error { display: block; background: #fdecea; color: #a32018; }
 
     .price-panel {
-      background: var(--primary-light);
+      background: var(--light);
       border-radius: 9px;
       padding: 14px;
       margin-top: 12px;
     }
 
-    .price-label {
-      font-size: 12px;
-      color: #4e6178;
-    }
-
-    .price {
-      font-size: 27px;
-      font-weight: 800;
-      color: var(--primary);
-      margin-top: 5px;
-    }
-
-    .item-name {
-      font-size: 16px;
-      font-weight: 700;
-      margin-top: 6px;
-      line-height: 1.4;
-      overflow-wrap: anywhere;
-    }
-
-    .barcode-display {
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      overflow-wrap: anywhere;
-    }
-
+    .price-label { font-size: 12px; color: #4e6178; }
+    .price { font-size: 27px; font-weight: 800; color: var(--primary); margin-top: 5px; }
+    .item-name { font-size: 16px; font-weight: bold; margin-top: 6px; line-height: 1.4; overflow-wrap: anywhere; }
+    .barcode-display { font-size: 18px; font-weight: bold; overflow-wrap: anywhere; }
+    .hint { color: #5d6b7b; font-size: 12px; line-height: 1.5; }
     .hidden { display: none !important; }
 
     .button-row {
@@ -191,8 +136,6 @@
       grid-template-columns: 1fr 1fr;
       gap: 9px;
     }
-
-    .button-row button { margin-top: 10px; }
 
     footer {
       text-align: center;
@@ -214,15 +157,8 @@
 
   <section class="card">
     <h2>1. Staff Details</h2>
-
     <label for="staff">Staff Number + Name</label>
-    <input
-      id="staff"
-      type="text"
-      placeholder="Example: 9999 John"
-      autocomplete="name"
-      required
-    >
+    <input id="staff" type="text" placeholder="Example: 9999 John" autocomplete="name">
   </section>
 
   <section class="card">
@@ -240,48 +176,31 @@
 
     <p class="hint">
       Scan the 13-digit EAN-13 barcode printed on the product.
-      Allow camera permission when Chrome asks.
     </p>
 
     <label for="barcode">Barcode Number</label>
-    <input
-      id="barcode"
-      type="text"
-      inputmode="numeric"
-      autocomplete="off"
-      placeholder="Scan or enter barcode"
-    >
+    <input id="barcode" type="text" inputmode="numeric" autocomplete="off"
+           placeholder="Scan or enter barcode">
 
     <div class="button-row">
-      <button id="searchBtn" class="primary" type="button">
-        Search Price
-      </button>
-      <button id="clearBtn" class="secondary" type="button">
-        Clear Form
-      </button>
+      <button id="searchBtn" class="primary" type="button">Search Price</button>
+      <button id="clearBtn" class="secondary" type="button">Clear Form</button>
     </div>
   </section>
 
   <section id="itemCard" class="card hidden">
     <h2>3. Item Details</h2>
-
     <div class="price-panel">
       <div class="price-label">Barcode</div>
       <div id="itemBarcode" class="barcode-display"></div>
 
-      <div class="price-label" style="margin-top:12px">
-        Item Description
-      </div>
+      <div class="price-label" style="margin-top:12px">Item Description</div>
       <div id="itemDescription" class="item-name"></div>
 
-      <div class="price-label" style="margin-top:14px">
-        Group Name
-      </div>
+      <div class="price-label" style="margin-top:14px">Group Name</div>
       <div id="groupName" class="item-name"></div>
 
-      <div class="price-label" style="margin-top:14px">
-        Master Retail Price
-      </div>
+      <div class="price-label" style="margin-top:14px">Master Retail Price</div>
       <div id="retailPrice" class="price"></div>
     </div>
   </section>
@@ -290,14 +209,8 @@
     <h2>4. Verify Shelf Price</h2>
 
     <label for="tagPrice">Shelf Tag Price (QAR)</label>
-    <input
-      id="tagPrice"
-      type="number"
-      inputmode="decimal"
-      step="0.01"
-      min="0"
-      placeholder="Enter price displayed on tag"
-    >
+    <input id="tagPrice" type="number" inputmode="decimal" step="0.01"
+           min="0" placeholder="Enter shelf tag price">
 
     <label for="result">Verification Result</label>
     <select id="result">
@@ -307,19 +220,10 @@
     </select>
 
     <label for="remarks">Remarks</label>
-    <textarea
-      id="remarks"
-      placeholder="Enter remarks if required"
-    ></textarea>
+    <textarea id="remarks" placeholder="Enter remarks if required"></textarea>
 
-    <button id="saveBtn" class="primary" type="button">
-      Save Verification
-    </button>
-
-    <p class="hint">
-      For MISSING TAG, leave the shelf tag price blank.
-      For other results, enter the actual shelf tag price.
-    </p>
+    <button id="saveBtn" class="primary" type="button">Save Verification</button>
+    <p class="hint">For MISSING TAG, leave the shelf tag price blank.</p>
   </section>
 </main>
 
@@ -328,10 +232,6 @@
 <script>
 "use strict";
 
-/*
- * Existing Apps Script deployment.
- * If you redeploy Apps Script with a new URL, update this value.
- */
 const API_URL =
   "https://script.google.com/macros/s/AKfycbx-knUul9MbdSUEV2WMItF8kQyJr_BtC-dw1OvFbYsu8vcftVytXXJy5NTo0Mt1n9TKpA/exec";
 
@@ -343,12 +243,9 @@ let currentItem = null;
 let requestInProgress = false;
 let requestCounter = 0;
 
-/* ---------------- STATUS ---------------- */
-
 function showStatus(message, type = "info") {
-  const el = $("status");
-  el.textContent = message;
-  el.className = type;
+  $("status").textContent = message;
+  $("status").className = type;
 }
 
 function hideStatus() {
@@ -356,24 +253,11 @@ function hideStatus() {
   $("status").className = "";
 }
 
-/* ---------------- API / JSONP ---------------- */
-
-/*
- * This uses JSONP because GitHub Pages and Apps Script
- * are different origins.
- *
- * Apps Script must return JavaScript in this form:
- * callbackName({"success":true,...});
- */
 function callApi(params, timeoutMs = 20000) {
   return new Promise((resolve, reject) => {
-    const callbackName =
-      "priceVerificationCallback_" +
-      Date.now() + "_" + (++requestCounter);
-
+    const callbackName = "priceCallback_" + Date.now() + "_" + (++requestCounter);
     const script = document.createElement("script");
     const url = new URL(API_URL);
-
     let finished = false;
 
     function cleanup() {
@@ -386,22 +270,17 @@ function callApi(params, timeoutMs = 20000) {
     const timer = setTimeout(() => {
       if (finished) return;
       cleanup();
-      reject(new Error(
-        "The server did not respond. Check your internet connection and Apps Script deployment."
-      ));
+      reject(new Error("Server timeout. Check the Apps Script deployment and internet connection."));
     }, timeoutMs);
 
-    window[callbackName] = function(data) {
+    window[callbackName] = data => {
       if (finished) return;
       cleanup();
       resolve(data);
     };
 
     Object.entries(params).forEach(([key, value]) => {
-      url.searchParams.set(
-        key,
-        typeof value === "string" ? value : String(value)
-      );
+      url.searchParams.set(key, String(value));
     });
 
     url.searchParams.set("callback", callbackName);
@@ -410,112 +289,59 @@ function callApi(params, timeoutMs = 20000) {
     script.src = url.toString();
     script.async = true;
 
-    script.onerror = function() {
+    script.onerror = () => {
       if (finished) return;
       cleanup();
-      reject(new Error(
-        "Could not connect to the Apps Script API. Check the deployed web app URL and access settings."
-      ));
+      reject(new Error("Could not connect to Apps Script. Check its URL and access settings."));
     };
 
     document.head.appendChild(script);
   });
 }
 
-/* ---------------- DATA HELPERS ---------------- */
-
-function pick(obj, names, fallback = "") {
-  if (!obj || typeof obj !== "object") return fallback;
-
-  for (const name of names) {
-    if (obj[name] !== undefined && obj[name] !== null) {
-      return obj[name];
-    }
-  }
-
-  return fallback;
-}
-
 function unwrapResponse(response) {
   if (!response || typeof response !== "object") {
-    throw new Error("The server returned an invalid response.");
+    throw new Error("Invalid server response.");
   }
-
   if (response.success === false || response.error) {
-    throw new Error(
-      response.error || response.message || "The server rejected the request."
-    );
+    throw new Error(response.error || response.message || "Request failed.");
   }
-
   return response;
 }
 
+function pick(obj, keys, fallback = "") {
+  for (const key of keys) {
+    if (obj && obj[key] !== undefined && obj[key] !== null) {
+      return obj[key];
+    }
+  }
+  return fallback;
+}
+
 function normalizeItem(response) {
-  /*
-   * Accept several common response shapes.
-   * The Apps Script API's actual response field names must match
-   * one of these alternatives.
-   */
-  const data = response.item ||
-               response.data ||
-               response.result ||
-               response;
+  const data = response.item || response.data || response.result || response;
+  if (Array.isArray(data)) return data.length ? normalizeItem(data[0]) : null;
 
-  if (Array.isArray(data)) {
-    if (data.length === 0) return null;
-    return normalizeItem(data[0]);
-  }
-
-  const barcode = String(pick(data, [
-    "barcode", "BARCODE", "Barcode"
-  ]));
-
-  const description = pick(data, [
-    "itemDescription", "item_description",
-    "ITEM_DESCRIPTION", "description",
-    "itemName", "name"
-  ]);
-
-  const group = pick(data, [
-    "groupName", "group_name", "GROUP NAME",
-    "GROUP_NAME", "group"
-  ]);
-
-  const price = pick(data, [
-    "retailPrice", "retail_price",
-    "Retail Price", "RETAIL PRICE",
-    "price"
-  ]);
-
-  if (!description && price === "") {
-    return null;
-  }
-
-  return {
-    barcode: barcode || $("barcode").value.trim(),
-    description: String(description || ""),
-    group: String(group || ""),
-    price: price
+  const item = {
+    barcode: String(pick(data, ["barcode", "BARCODE", "Barcode"], $("barcode").value.trim())),
+    description: String(pick(data, ["itemDescription", "item_description", "ITEM_DESCRIPTION", "description", "itemName", "name"])),
+    group: String(pick(data, ["groupName", "group_name", "GROUP NAME", "GROUP_NAME", "group"])),
+    price: pick(data, ["retailPrice", "retail_price", "Retail Price", "RETAIL PRICE", "price"])
   };
+
+  return item.description || item.price !== "" ? item : null;
 }
 
 function formatPrice(value) {
   const number = Number(value);
-
-  if (!Number.isFinite(number)) {
-    return String(value ?? "");
-  }
-
-  return number.toFixed(2) + " QAR";
+  return Number.isFinite(number) ? number.toFixed(2) + " QAR" : String(value ?? "");
 }
 
-/* ---------------- BARCODE SEARCH ---------------- */
-
-async function searchBarcode(barcodeValue) {
-  const barcode = String(barcodeValue || "").trim();
+async function searchBarcode(value) {
+  const barcode = String(value || "").trim();
 
   if (!barcode) {
-    showStatus("Please scan or enter a barcode first.", "error");
+    showStatus("Please scan or enter a barcode.", "error");
     return;
   }
 
@@ -523,12 +349,12 @@ async function searchBarcode(barcodeValue) {
 
   requestInProgress = true;
   $("searchBtn").disabled = true;
-  showStatus("Searching the price master...", "info");
+  showStatus("Searching price master...", "info");
 
   try {
     const response = unwrapResponse(await callApi({
       action: "search",
-      barcode: barcode
+      barcode
     }));
 
     const item = normalizeItem(response);
@@ -537,16 +363,11 @@ async function searchBarcode(barcodeValue) {
       currentItem = null;
       $("itemCard").classList.add("hidden");
       $("verificationCard").classList.add("hidden");
-
-      showStatus(
-        "Barcode " + barcode + " was not found in PRICE_MASTER.",
-        "error"
-      );
+      showStatus("Barcode " + barcode + " was not found in PRICE_MASTER.", "error");
       return;
     }
 
     currentItem = item;
-
     $("barcode").value = item.barcode || barcode;
     $("itemBarcode").textContent = item.barcode || barcode;
     $("itemDescription").textContent = item.description;
@@ -559,7 +380,6 @@ async function searchBarcode(barcodeValue) {
 
     $("itemCard").classList.remove("hidden");
     $("verificationCard").classList.remove("hidden");
-
     showStatus("Item found. Compare the shelf tag price.", "success");
     $("tagPrice").focus();
 
@@ -571,172 +391,35 @@ async function searchBarcode(barcodeValue) {
   }
 }
 
-/* ---------------- SAVE VERIFICATION ---------------- */
-
-async function saveVerification() {
-  const staff = $("staff").value.trim();
-  const tagPriceText = $("tagPrice").value.trim();
-  const result = $("result").value;
-  const remarks = $("remarks").value.trim();
-
-  if (!staff) {
-    showStatus("Enter the staff number and name first.", "error");
-    $("staff").focus();
-    return;
-  }
-
-  if (!currentItem) {
-    showStatus("Search for a valid barcode before saving.", "error");
-    return;
-  }
-
-  if (result === "MISSING TAG") {
-    // Blank tag price is permitted for a missing tag.
-  } else {
-    if (tagPriceText === "") {
-      showStatus("Please enter the shelf tag price.", "error");
-      $("tagPrice").focus();
-      return;
-    }
-
-    const tagPriceNumber = Number(tagPriceText);
-
-    if (!Number.isFinite(tagPriceNumber) || tagPriceNumber < 0) {
-      showStatus("Enter a valid, non-negative shelf tag price.", "error");
-      $("tagPrice").focus();
-      return;
-    }
-  }
-
-  if (requestInProgress) return;
-
-  const tagPrice = tagPriceText === "" ? "" : Number(tagPriceText);
-  const masterPrice = Number(currentItem.price);
-
-  if (result === "CORRECT" &&
-      tagPriceText !== "" &&
-      Number.isFinite(masterPrice) &&
-      Math.abs(tagPrice - masterPrice) > 0.001) {
-    showStatus(
-      "The tag price differs from the master price. Please verify the result before saving.",
-      "error"
-    );
-    return;
-  }
-
-  if (result === "WRONG TAG" &&
-      tagPriceText !== "" &&
-      Number.isFinite(masterPrice) &&
-      Math.abs(tagPrice - masterPrice) < 0.001) {
-    showStatus(
-      "The tag price matches the master price. Please verify the result before saving.",
-      "error"
-    );
-    return;
-  }
-
-  const payload = {
-    staff: staff,
-    barcode: currentItem.barcode || $("barcode").value.trim(),
-    groupName: currentItem.group,
-    itemDescription: currentItem.description,
-    retailPrice: currentItem.price,
-    tagPrice: tagPrice,
-    result: result,
-    remarks: remarks
-  };
-
-  requestInProgress = true;
-  $("saveBtn").disabled = true;
-  showStatus("Saving verification...", "info");
-
-  try {
-    const response = unwrapResponse(await callApi({
-      action: "save",
-      data: JSON.stringify(payload)
-    }));
-
-    if (response.success === false) {
-      throw new Error(response.error || response.message || "Save failed.");
-    }
-
-    showStatus(
-      response.message || "Verification saved successfully.",
-      "success"
-    );
-
-    $("tagPrice").value = "";
-    $("remarks").value = "";
-    $("result").value = "CORRECT";
-
-  } catch (error) {
-    showStatus(
-      "Save failed: " + error.message +
-      " Please check the verification log before retrying.",
-      "error"
-    );
-  } finally {
-    requestInProgress = false;
-    $("saveBtn").disabled = false;
-  }
-}
-
-/* ---------------- CAMERA / EAN-13 ---------------- */
-
+/* FASTER EAN-13 CAMERA SCANNER */
 async function startCamera() {
   hideStatus();
 
-  if (!window.isSecureContext) {
-    showStatus(
-      "Camera unavailable: open the app using its HTTPS GitHub Pages URL.",
-      "error"
-    );
-    return;
-  }
-
-  if (!navigator.mediaDevices ||
-      !navigator.mediaDevices.getUserMedia) {
-    showStatus(
-      "This browser does not provide camera access. Open the app in Chrome.",
-      "error"
-    );
+  if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+    showStatus("Camera requires HTTPS and a supported browser. Open the GitHub Pages URL in Chrome.", "error");
     return;
   }
 
   if (!window.Html5Qrcode) {
-    showStatus(
-      "The barcode scanner library did not load. Check your internet connection and reload.",
-      "error"
-    );
+    showStatus("Scanner library failed to load. Check your internet connection.", "error");
     return;
   }
 
   $("startCameraBtn").disabled = true;
-  showStatus("Requesting camera access...", "info");
+  showStatus("Opening camera...", "info");
 
   try {
-    /*
-     * First test direct browser camera permission.
-     * Stop this temporary stream before starting the scanner.
-     */
-    let testStream;
-
-    try {
-      testStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-        audio: false
-      });
-    } catch (error) {
-      throw error;
-    }
+    // Test camera permission first.
+    const testStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" } },
+      audio: false
+    });
 
     testStream.getTracks().forEach(track => track.stop());
 
     if (!scanner) {
       scanner = new Html5Qrcode("reader", {
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.EAN_13
-        ],
+        formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13],
         verbose: false
       });
     }
@@ -744,53 +427,44 @@ async function startCamera() {
     await scanner.start(
       { facingMode: "environment" },
       {
-        fps: 12,
+        fps: 20,
         qrbox: function(viewWidth, viewHeight) {
-          const width = Math.min(320, Math.floor(viewWidth * 0.9));
-          const height = Math.min(150, Math.floor(viewHeight * 0.5));
-
-          return { width: width, height: height };
+          return {
+            width: Math.min(280, Math.floor(viewWidth * 0.85)),
+            height: Math.min(100, Math.floor(viewHeight * 0.3))
+          };
         },
-        aspectRatio: 1.777,
-        disableFlip: false
+        disableFlip: true
       },
       async function(decodedText) {
         const barcode = String(decodedText).trim();
 
-        // EAN-13 should contain exactly 13 digits.
         if (!/^\d{13}$/.test(barcode)) return;
 
         $("barcode").value = barcode;
-        showStatus("EAN-13 barcode scanned: " + barcode, "success");
+        showStatus("EAN-13 scanned: " + barcode, "success");
 
         await stopCamera(false);
         await searchBarcode(barcode);
       },
       function() {
-        // Normal scan misses are expected; do not show an error each time.
+        // No message for normal scan misses.
       }
     );
 
     scannerRunning = true;
     $("stopCameraBtn").classList.remove("hidden");
-    showStatus(
-      "Camera ready. Point it at the 13-digit product barcode.",
-      "success"
-    );
+    showStatus("Camera ready. Point it at the EAN-13 product barcode.", "success");
 
   } catch (error) {
     let message = error.message || String(error);
 
-    if (error.name === "NotAllowedError" ||
-        error.name === "PermissionDeniedError") {
-      message =
-        "Camera permission denied. Allow Camera for Chrome in Android Settings, " +
-        "and allow Camera for this GitHub Pages website in Chrome site settings.";
+    if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
+      message = "Camera permission denied. Allow camera access in Android Settings and Chrome site settings.";
     } else if (error.name === "NotFoundError") {
-      message = "No available camera was found on this device.";
+      message = "No camera was found.";
     } else if (error.name === "NotReadableError") {
-      message =
-        "The camera could not be opened. Close other apps using the camera and try again.";
+      message = "Camera is busy or unavailable. Close other camera apps and try again.";
     }
 
     showStatus("Camera error: " + message, "error");
@@ -799,7 +473,6 @@ async function startCamera() {
       try { await scanner.stop(); } catch (_) {}
       scannerRunning = false;
     }
-
   } finally {
     $("startCameraBtn").disabled = false;
   }
@@ -807,9 +480,7 @@ async function startCamera() {
 
 async function stopCamera(showMessage = true) {
   if (scanner && scannerRunning) {
-    try {
-      await scanner.stop();
-    } catch (error) {
+    try { await scanner.stop(); } catch (error) {
       console.warn("Scanner stop:", error);
     }
   }
@@ -825,43 +496,106 @@ async function stopCamera(showMessage = true) {
   $("stopCameraBtn").classList.add("hidden");
   $("startCameraBtn").disabled = false;
 
-  if (showMessage) {
-    showStatus("Camera stopped.", "info");
+  if (showMessage) showStatus("Camera stopped.", "info");
+}
+
+async function saveVerification() {
+  const staff = $("staff").value.trim();
+  const tagText = $("tagPrice").value.trim();
+  const result = $("result").value;
+  const remarks = $("remarks").value.trim();
+
+  if (!staff) {
+    showStatus("Enter staff number and name.", "error");
+    $("staff").focus();
+    return;
+  }
+
+  if (!currentItem) {
+    showStatus("Search for an item before saving.", "error");
+    return;
+  }
+
+  if (result !== "MISSING TAG" && tagText === "") {
+    showStatus("Enter the shelf tag price.", "error");
+    return;
+  }
+
+  const tagPrice = tagText === "" ? "" : Number(tagText);
+  const masterPrice = Number(currentItem.price);
+
+  if (tagText !== "" && (!Number.isFinite(tagPrice) || tagPrice < 0)) {
+    showStatus("Enter a valid shelf tag price.", "error");
+    return;
+  }
+
+  if (result === "CORRECT" && Number.isFinite(masterPrice) &&
+      tagText !== "" && Math.abs(tagPrice - masterPrice) > 0.001) {
+    showStatus("Tag price differs from the master price. Check the result.", "error");
+    return;
+  }
+
+  if (result === "WRONG TAG" && Number.isFinite(masterPrice) &&
+      tagText !== "" && Math.abs(tagPrice - masterPrice) < 0.001) {
+    showStatus("Tag price matches the master price. Check the result.", "error");
+    return;
+  }
+
+  if (requestInProgress) return;
+  requestInProgress = true;
+  $("saveBtn").disabled = true;
+  showStatus("Saving verification...", "info");
+
+  try {
+    const payload = {
+      staff,
+      barcode: currentItem.barcode || $("barcode").value.trim(),
+      groupName: currentItem.group,
+      itemDescription: currentItem.description,
+      retailPrice: currentItem.price,
+      tagPrice,
+      result,
+      remarks
+    };
+
+    const response = unwrapResponse(await callApi({
+      action: "save",
+      data: JSON.stringify(payload)
+    }));
+
+    showStatus(response.message || "Verification saved successfully.", "success");
+    $("tagPrice").value = "";
+    $("remarks").value = "";
+    $("result").value = "CORRECT";
+
+  } catch (error) {
+    showStatus("Save failed: " + error.message +
+      " Check VERIFICATION_LOG before retrying.", "error");
+  } finally {
+    requestInProgress = false;
+    $("saveBtn").disabled = false;
   }
 }
 
-/* ---------------- CLEAR FORM ---------------- */
-
 async function clearForm() {
-  if (scannerRunning) {
-    await stopCamera(false);
-  }
+  if (scannerRunning) await stopCamera(false);
 
   currentItem = null;
-
   $("barcode").value = "";
   $("tagPrice").value = "";
   $("remarks").value = "";
   $("result").value = "CORRECT";
-
   $("itemCard").classList.add("hidden");
   $("verificationCard").classList.add("hidden");
-
   hideStatus();
   $("barcode").focus();
 }
 
-/* ---------------- EVENTS ---------------- */
-
 $("startCameraBtn").addEventListener("click", startCamera);
-
-$("stopCameraBtn").addEventListener("click", () => {
-  stopCamera(true);
-});
-
-$("searchBtn").addEventListener("click", () => {
-  searchBarcode($("barcode").value);
-});
+$("stopCameraBtn").addEventListener("click", () => stopCamera(true));
+$("searchBtn").addEventListener("click", () => searchBarcode($("barcode").value));
+$("saveBtn").addEventListener("click", saveVerification);
+$("clearBtn").addEventListener("click", clearForm);
 
 $("barcode").addEventListener("keydown", event => {
   if (event.key === "Enter") {
@@ -869,9 +603,6 @@ $("barcode").addEventListener("keydown", event => {
     searchBarcode($("barcode").value);
   }
 });
-
-$("saveBtn").addEventListener("click", saveVerification);
-$("clearBtn").addEventListener("click", clearForm);
 
 $("result").addEventListener("change", () => {
   if ($("result").value === "MISSING TAG") {
