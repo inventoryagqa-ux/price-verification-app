@@ -164,8 +164,9 @@ async function startScanner() {
         const code=String(decoded||"").trim();
         if(!code)return;
         scanHandled=true; $("barcode").value=code;
-        await stopScanner(false);
+        const stoppingCamera = stopScanner(false);
         await checkBarcode(code);
+        await stoppingCamera;
       },()=>{});
     scannerRunning=true; $("stopButton").classList.remove("hidden");
     message("Camera ready. Point it at the product barcode.","good");
