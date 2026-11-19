@@ -152,13 +152,10 @@ async function startScanner() {
     const rear=cameras.find(c=>/back|rear|environment|trás|trasera|arrière/i.test(c.label));
     const camera=rear || cameras[cameras.length-1];
     scanner=new Html5Qrcode("reader",{formatsToSupport:[
-      Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,
-      Html5QrcodeSupportedFormats.UPC_A,Html5QrcodeSupportedFormats.UPC_E,
-      Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.CODE_39,
-      Html5QrcodeSupportedFormats.ITF
+      Html5QrcodeSupportedFormats.EAN_13
     ],verbose:false});
     scanHandled=false;
-    await scanner.start(camera.id,{fps:12,qrbox:(w,h)=>({width:Math.min(320,Math.floor(w*.9)),height:Math.min(170,Math.floor(h*.55))}),disableFlip:true},
+    await scanner.start(camera.id,{fps:10,qrbox:(w,h)=>({width:Math.min(280,Math.floor(w*.82)),height:Math.min(150,Math.floor(h*.45))}),disableFlip:true},
       async decoded=>{
         if(scanHandled)return;
         const code=String(decoded||"").trim();
