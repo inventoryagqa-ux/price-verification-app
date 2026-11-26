@@ -5,17 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#123b63">
   <title>Barwa Discount Checker</title>
-  <script type="importmap">
-    {
-      "imports": {
-        "@scandit/web-datacapture-core": "https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-core@8.7.2/build/js/index.js",
-        "@scandit/web-datacapture-barcode": "https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-barcode@8.7.2/build/js/index.js",
-        "@scandit/web-datacapture-barcode/": "https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-barcode@8.7.2/",
-        "@scandit/web-datacapture-core/build/js/private/utils/warnMultithreadingUnavailable.js": "https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-core@8.7.2/build/js/private/utils/warnMultithreadingUnavailable.js",
-        "@scandit/web-datacapture-core/": "https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-core@8.7.2/"
-      }
-    }
-  </script>
   <style>
     :root{--blue:#123b63;--pale:#eaf2fb;--border:#d8e0e9;--bg:#f3f6fa;--text:#172b42}
     *{box-sizing:border-box}
@@ -99,10 +88,12 @@ window.addEventListener("unhandledrejection", function(event) {
   }
 });
 </script>
-<script type="module">
+<script src="https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-core@8.7.2/build/js/umd/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-barcode@8.7.2/build/js/umd/index.js"></script>
+<script>
 "use strict";
-import { DataCaptureContext, Camera, DataCaptureView, FrameSourceState } from "@scandit/web-datacapture-core";
-import { BarcodeCapture, BarcodeCaptureSettings, BarcodeCaptureOverlay, Symbology, barcodeCaptureLoader } from "@scandit/web-datacapture-barcode";
+const { DataCaptureContext, Camera, DataCaptureView, FrameSourceState } = SDCCore;
+const { BarcodeCapture, BarcodeCaptureSettings, BarcodeCaptureOverlay, Symbology, barcodeCaptureLoader } = SDCBarcode;
 const API_URL = "https://script.google.com/macros/s/AKfycbx-knUul9MbdSUEV2WMItF8kQyJr_BtC-dw1OvFbYsu8vcftVytXXJy5NTo0Mt1n9TKpA/exec";
 const $ = id => document.getElementById(id);
 let context=null,camera=null,barcodeCapture=null,scannerRunning=false,busy=false,resultTimer=null,requestNo=0;
