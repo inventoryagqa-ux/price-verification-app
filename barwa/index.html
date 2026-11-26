@@ -80,6 +80,26 @@
   </section>
 </main>
 <footer>Barwa Discount Checker · Inventory Department</footer>
+<script>
+window.addEventListener("error", function(event) {
+  const target = event.target;
+  const source = target && target.src ? target.src : (event.filename || "");
+  if (source.includes("rum-static.pingdom.net")) return;
+  const message = document.getElementById("message");
+  if (message && source.includes("scandit")) {
+    message.textContent = "SCANDIT MODULE LOAD ERROR: " + (event.message || "A Scandit file could not be loaded.") + " Check internet/CDN access, then reload this page.";
+    message.className = "bad";
+  }
+});
+window.addEventListener("unhandledrejection", function(event) {
+  const message = document.getElementById("message");
+  if (message) {
+    const reason = event.reason && event.reason.message ? event.reason.message : String(event.reason || "Unknown error");
+    message.textContent = "APP INITIALIZATION ERROR: " + reason;
+    message.className = "bad";
+  }
+});
+</script>
 <script type="module">
 "use strict";
 import { DataCaptureContext, Camera, DataCaptureView, FrameSourceState } from "@scandit/web-datacapture-core";
