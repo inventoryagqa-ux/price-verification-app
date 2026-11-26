@@ -186,7 +186,7 @@ async function startScanner() {
 async function onBarcodeDetected(result) {
   if(scanHandled || busy || !result?.codeResult?.code)return;
   const code=String(result.codeResult.code).trim();
-  if(!/^\\d{13}$/.test(code))return;
+  if(!/^\d{13}$/.test(code))return;
   scanHandled=true;
   $("barcode").value=code;
   await stopScanner(false);
