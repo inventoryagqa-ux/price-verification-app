@@ -49,11 +49,8 @@
 <main>
   <div id="message" role="status" aria-live="polite"></div>
   <section class="card" id="licenseCard">
-    <h2>1. Scandit Licence</h2>
-    <label for="licenseKey">Paste the Scandit trial licence key</label>
-    <input id="licenseKey" type="password" autocomplete="off" placeholder="Scandit licence key">
-    <p class="hint">The key is kept in this browser tab's session only. Each device/browser needs the key entered once per session. Do not share the key publicly.</p>
-    <button id="continueButton" class="primary" type="button">CONTINUE</button>
+    <h2>Starting Barwa Discount Checker</h2>
+    <p class="hint">Loading the barcode scanner. Please wait...</p>
   </section>
   <section class="card hidden" id="staffCard">
     <h2>2. Staff Details</h2>
@@ -129,11 +126,11 @@ async function checkBarcode(value){
  }catch(error){message("Search failed: "+error.message,"bad");}
  finally{busy=false;$("searchButton").disabled=false;}
 }
+const SCANDIT_LICENSE_KEY = "__SCANDIT_LICENSE_KEY__";
 async function initializeScandit(){
- if(context)return;const key=$("licenseKey").value.trim();if(!key){message("Please paste your regenerated Scandit trial key.","bad");$("licenseKey").focus();return;}
- $("continueButton").disabled=true;message("Initializing Scandit. The first load may take a little longer while its scanning engine downloads...","info");
+ if(context)return;const key=SCANDIT_LICENSE_KEY;if(!key||key==="__SCANDIT_LICENSE_KEY__"){message("Scanner licence is not configured. Please contact Inventory support.","bad");return;}
+ message("Initializing Scandit. The first load may take a little longer while its scanning engine downloads...","info");
  try{
-  sessionStorage.setItem("barwaScanditTrialKey",key);
   context=await DataCaptureContext.forLicenseKey(key,{libraryLocation:"https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-barcode@8.7.2/sdc-lib/",moduleLoaders:[barcodeCaptureLoader()]});
   const settings=new BarcodeCaptureSettings();settings.enableSymbologies([Symbology.EAN13UPCA]);settings.codeDuplicateFilter=-1;
   barcodeCapture=await BarcodeCapture.forContext(context,settings);
@@ -145,8 +142,7 @@ async function initializeScandit(){
   $("licenseCard").classList.add("hidden");$("staffCard").classList.remove("hidden");$("scannerCard").classList.remove("hidden");
   try{$("staff").value=localStorage.getItem("barwaDiscountStaff")||"";$("staff").addEventListener("change",()=>{try{localStorage.setItem("barwaDiscountStaff",$("staff").value.trim());}catch(_){}});}catch(_){}
   message("Scandit is ready. Enter staff details, then start the camera.","good");
- }catch(error){context=null;camera=null;barcodeCapture=null;try{sessionStorage.removeItem("barwaScanditTrialKey");}catch(_){}message("SCANDIT INITIALIZATION FAILED: "+(error?.message||String(error))+". Check the trial key, its allowed domain, and internet connection.","bad");}
- finally{$("continueButton").disabled=false;}
+ }catch(error){context=null;camera=null;barcodeCapture=null;message("SCANDIT INITIALIZATION FAILED: "+(error?.message||String(error))+". Check the trial key, its allowed domain, and internet connection, then reload the page.","bad");}
 }
 async function startScanner(){
  if(!context||scannerRunning||busy)return;if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){message("Camera access requires HTTPS. Open this GitHub Pages website in Safari or Chrome.","bad");return;}
@@ -156,11 +152,11 @@ async function startScanner(){
  catch(error){try{await stopScanner(false);}catch(_){}message("CAMERA FAILED: "+(error?.message||String(error)),"bad");}
  finally{$("scanButton").disabled=false;}
 }
-$("continueButton").addEventListener("click",initializeScandit);$("scanButton").addEventListener("click",startScanner);$("stopButton").addEventListener("click",()=>stopScanner(true));
+$("scanButton").addEventListener("click",startScanner);$("stopButton").addEventListener("click",()=>stopScanner(true));
 $("searchButton").addEventListener("click",()=>checkBarcode($("barcode").value));$("newSearchButton").addEventListener("click",newSearch);
 $("barcode").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();checkBarcode($("barcode").value);}});
 window.addEventListener("pagehide",()=>{try{if(context?.frameSource)context.frameSource.switchToDesiredState(FrameSourceState.Off);}catch(_){}});
-try{$("licenseKey").value=sessionStorage.getItem("barwaScanditTrialKey")||"";}catch(_){}
+initializeScandit();
 </script>
 </body>
 </html>
