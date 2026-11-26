@@ -155,7 +155,7 @@ async function startScanner() {
       Html5QrcodeSupportedFormats.EAN_13
     ],verbose:false});
     scanHandled=false;
-    await scanner.start(camera.id,{fps:10,qrbox:(w,h)=>({width:Math.min(280,Math.floor(w*.82)),height:Math.min(150,Math.floor(h*.45))}),disableFlip:true},
+    await scanner.start(camera.id,{fps:15,qrbox:(w,h)=>({width:Math.min(360,Math.floor(w*.90)),height:Math.min(120,Math.floor(h*.40))}),disableFlip:true},
       async decoded=>{
         if(scanHandled)return;
         const code=String(decoded||"").trim();
