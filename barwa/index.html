@@ -90,20 +90,30 @@ window.addEventListener("unhandledrejection", function(event) {
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-core@8.7.2/build/js/umd/index.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-barcode@8.7.2/build/js/umd/index.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 "use strict";
-const { DataCaptureContext, Camera, DataCaptureView, FrameSourceState } = SDCCore;
-const { BarcodeCapture, BarcodeCaptureSettings, BarcodeCaptureOverlay, Symbology, barcodeCaptureLoader } = SDCBarcode;
+let DataCaptureContext, Camera, DataCaptureView, FrameSourceState;
+let BarcodeCapture, BarcodeCaptureSettings, BarcodeCaptureOverlay, Symbology, barcodeCaptureLoader;
 const API_URL = "https://script.google.com/macros/s/AKfycbx-knUul9MbdSUEV2WMItF8kQyJr_BtC-dw1OvFbYsu8vcftVytXXJy5NTo0Mt1n9TKpA/exec";
 const $ = id => document.getElementById(id);
 let context=null,camera=null,barcodeCapture=null,scannerRunning=false,busy=false,resultTimer=null,requestNo=0;
+let scannerMode="",html5Scanner=null;
 function message(text,type="info"){$("message").textContent=text;$("message").className=type;}
 function clearMessage(){$("message").textContent="";$("message").className="";}
 function normalizeResponse(data){if(!data||typeof data!=="object")throw new Error("Invalid response from Apps Script.");if(data.error||data.success===false)throw new Error(data.error||data.message||"Request failed.");return data;}
 function callApi(params,timeoutMs=20000){return new Promise((resolve,reject)=>{const callback="barwaCallback_"+Date.now()+"_"+(++requestNo);const script=document.createElement("script"),url=new URL(API_URL);let finished=false;const timer=setTimeout(()=>finish(new Error("Server timed out. Please try again.")),timeoutMs);function finish(error,data){if(finished)return;finished=true;clearTimeout(timer);delete window[callback];script.remove();error?reject(error):resolve(data);}window[callback]=data=>finish(null,data);Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,String(v)));url.searchParams.set("callback",callback);url.searchParams.set("_",String(Date.now()));script.src=url.toString();script.async=true;script.onerror=()=>finish(new Error("Could not connect to Apps Script. Check internet access and deployment permissions."));document.head.appendChild(script);});}
 function hideResult(){$("resultCard").classList.add("hidden");}
 function newSearch(){clearTimeout(resultTimer);hideResult();$("barcode").value="";clearMessage();$("barcode").focus();}
-async function stopScanner(showMessage=true){try{if(barcodeCapture)await barcodeCapture.setEnabled(false);}catch(_){}try{if(context?.frameSource)await context.frameSource.switchToDesiredState(FrameSourceState.Off);}catch(_){}scannerRunning=false;$("stopButton").classList.add("hidden");$("scanButton").disabled=false;if(showMessage)message("Camera stopped.","info");}
+async function stopScanner(showMessage=true){
+ try{
+  if(scannerMode==="html5"&&html5Scanner&&scannerRunning){await html5Scanner.stop();html5Scanner.clear();}
+  else if(barcodeCapture)await barcodeCapture.setEnabled(false);
+ }catch(_){}
+ try{if(scannerMode==="scandit"&&context?.frameSource)await context.frameSource.switchToDesiredState(FrameSourceState.Off);}catch(_){}
+ scannerRunning=false;$("stopButton").classList.add("hidden");$("scanButton").disabled=false;
+ if(showMessage)message("Camera stopped.","info");
+}
 async function checkBarcode(value){
  const barcode=String(value||"").trim();if(!barcode){message("Please scan or enter a barcode.","bad");return;}
  const staff=$("staff").value.trim();if(!staff){message("Please enter staff number and name before scanning.","bad");$("staff").focus();return;}
@@ -120,29 +130,54 @@ async function checkBarcode(value){
  finally{busy=false;$("searchButton").disabled=false;}
 }
 const SCANDIT_LICENSE_KEY = "__SCANDIT_LICENSE_KEY__";
+function showScannerApp(){
+ $("licenseCard").classList.add("hidden");$("staffCard").classList.remove("hidden");$("scannerCard").classList.remove("hidden");
+ try{$("staff").value=localStorage.getItem("barwaDiscountStaff")||"";$("staff").addEventListener("change",()=>{try{localStorage.setItem("barwaDiscountStaff",$("staff").value.trim());}catch(_){}});}catch(_){}
+}
 async function initializeScandit(){
- if(context)return;const key=SCANDIT_LICENSE_KEY;if(!key||key==="__SCANDIT_LICENSE_KEY__"){message("Scanner licence is not configured. Please contact Inventory support.","bad");return;}
- message("Initializing Scandit. The first load may take a little longer while its scanning engine downloads...","info");
  try{
+  if(!window.SDCCore||!window.SDCBarcode)throw new Error("Scandit libraries could not be loaded.");
+  ({DataCaptureContext,Camera,DataCaptureView,FrameSourceState}=window.SDCCore);
+  ({BarcodeCapture,BarcodeCaptureSettings,BarcodeCaptureOverlay,Symbology,barcodeCaptureLoader}=window.SDCBarcode);
+  const key=SCANDIT_LICENSE_KEY;
+  if(!key||key==="__SCANDIT_LICENSE_KEY__")throw new Error("Scandit licence is not configured.");
+  message("Initializing Scandit. Please wait...","info");
   context=await DataCaptureContext.forLicenseKey(key,{libraryLocation:"https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-barcode@8.7.2/sdc-lib/",moduleLoaders:[barcodeCaptureLoader()]});
   const settings=new BarcodeCaptureSettings();settings.enableSymbologies([Symbology.EAN13UPCA]);settings.codeDuplicateFilter=-1;
   barcodeCapture=await BarcodeCapture.forContext(context,settings);
   const view=await DataCaptureView.forContext(context);view.connectToElement($("cameraView"));await view.setContext(context);
   await BarcodeCaptureOverlay.withBarcodeCaptureForView(barcodeCapture,view);
-  barcodeCapture.addListener({didScan:async(_mode,session)=>{const scanned=session.newlyRecognizedBarcode?.data;if(!scanned||busy||!scannerRunning)return;const code=String(scanned).trim();if(!/^\d{12,13}$/.test(code))return;await stopScanner(false);$("barcode").value=code;await checkBarcode(code);}});
+  barcodeCapture.addListener({didScan:async(_mode,session)=>{const scanned=session.newlyRecognizedBarcode?.data;if(!scanned||busy||!scannerRunning)return;const code=String(scanned).trim();if(!/^\\d{12,13}$/.test(code))return;await stopScanner(false);$("barcode").value=code;await checkBarcode(code);}});
   camera=Camera.pickBestGuess();if(!camera)throw new Error("No camera was found on this device.");
   await camera.applySettings(BarcodeCapture.recommendedCameraSettings);await context.setFrameSource(camera);
-  $("licenseCard").classList.add("hidden");$("staffCard").classList.remove("hidden");$("scannerCard").classList.remove("hidden");
-  try{$("staff").value=localStorage.getItem("barwaDiscountStaff")||"";$("staff").addEventListener("change",()=>{try{localStorage.setItem("barwaDiscountStaff",$("staff").value.trim());}catch(_){}});}catch(_){}
-  message("Scandit is ready. Enter staff details, then start the camera.","good");
- }catch(error){context=null;camera=null;barcodeCapture=null;message("SCANDIT INITIALIZATION FAILED: "+(error?.message||String(error))+". Check the trial key, its allowed domain, and internet connection, then reload the page.","bad");}
+  scannerMode="scandit";showScannerApp();message("Scandit is ready. Enter staff details, then start the camera.","good");
+ }catch(error){
+  context=null;camera=null;barcodeCapture=null;
+  try{
+   if(!window.Html5Qrcode||!window.Html5QrcodeSupportedFormats)throw new Error("Free camera scanner library could not be loaded.");
+   html5Scanner=new Html5Qrcode("cameraView",{verbose:false,formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.UPC_A]});
+   scannerMode="html5";showScannerApp();
+   message("Scandit is unavailable on this device. Free camera fallback is ready; barcode checking and verification logging remain the same.","good");
+  }catch(fallbackError){
+   scannerMode="";message("SCANNER INITIALIZATION FAILED: "+(fallbackError?.message||String(fallbackError))+". Check internet access and reload the page.","bad");
+  }
+ }
 }
 async function startScanner(){
- if(!context||scannerRunning||busy)return;if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){message("Camera access requires HTTPS. Open this GitHub Pages website in Safari or Chrome.","bad");return;}
+ if(!scannerMode||scannerRunning||busy)return;if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){message("Camera access requires HTTPS. Open this GitHub Pages website in Safari or Chrome.","bad");return;}
  if(!$("staff").value.trim()){message("Please enter staff number and name before scanning.","bad");$("staff").focus();return;}
- $("scanButton").disabled=true;clearMessage();message("Starting Scandit camera...","info");
- try{await context.frameSource.switchToDesiredState(FrameSourceState.On);await barcodeCapture.setEnabled(true);scannerRunning=true;$("stopButton").classList.remove("hidden");message("Camera ready. Place the EAN-13 barcode in view and hold it steady.","good");}
- catch(error){try{await stopScanner(false);}catch(_){}message("CAMERA FAILED: "+(error?.message||String(error)),"bad");}
+ $("scanButton").disabled=true;clearMessage();message("Starting camera...","info");
+ try{
+  if(scannerMode==="html5"){
+   await html5Scanner.start({facingMode:"environment"},{fps:12,qrbox:{width:280,height:150},aspectRatio:1.777},async decodedText=>{
+    if(busy||!scannerRunning)return;const code=String(decodedText||"").trim();if(!/^\\d{12,13}$/.test(code))return;
+    await stopScanner(false);$("barcode").value=code;await checkBarcode(code);
+   },()=>{});
+  }else{
+   await context.frameSource.switchToDesiredState(FrameSourceState.On);await barcodeCapture.setEnabled(true);
+  }
+  scannerRunning=true;$("stopButton").classList.remove("hidden");message("Camera ready. Place the barcode in view and hold it steady.","good");
+ }catch(error){try{await stopScanner(false);}catch(_){}message("CAMERA FAILED: "+(error?.message||String(error)),"bad");}
  finally{$("scanButton").disabled=false;}
 }
 $("scanButton").addEventListener("click",startScanner);$("stopButton").addEventListener("click",()=>stopScanner(true));
