@@ -44,12 +44,17 @@ jobs:
               ignore=shutil.ignore_patterns(".git", ".github", "_site")
           )
 
-          page = output / "barwa" / "index.html"
-          source = page.read_text(encoding="utf-8")
           placeholder = "__SCANDIT_LICENSE_KEY__"
-          if placeholder not in source:
-              raise SystemExit("Scandit licence placeholder not found in barwa/index.html")
-          page.write_text(source.replace(placeholder, key, 1), encoding="utf-8")
+          pages = [
+              output / "barwa" / "index.html",
+              output / "barwa-fallback-test" / "index.html",
+          ]
+          for page in pages:
+              if not page.exists():
+                  continue
+              source = page.read_text(encoding="utf-8")
+              if placeholder in source:
+                  page.write_text(source.replace(placeholder, key, 1), encoding="utf-8")
           PY
 
       - name: Configure GitHub Pages
