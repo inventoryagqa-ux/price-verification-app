@@ -147,7 +147,7 @@ async function initializeScandit(){
   barcodeCapture=await BarcodeCapture.forContext(context,settings);
   const view=await DataCaptureView.forContext(context);view.connectToElement($("cameraView"));await view.setContext(context);
   await BarcodeCaptureOverlay.withBarcodeCaptureForView(barcodeCapture,view);
-  barcodeCapture.addListener({didScan:async(_mode,session)=>{const scanned=session.newlyRecognizedBarcode?.data;if(!scanned||busy||!scannerRunning)return;const code=String(scanned).trim();if(!/^\\d{12,13}$/.test(code))return;await stopScanner(false);$("barcode").value=code;await checkBarcode(code);}});
+  barcodeCapture.addListener({didScan:async(_mode,session)=>{const scanned=session.newlyRecognizedBarcode?.data;if(!scanned||busy||!scannerRunning)return;const code=String(scanned).trim();if(!/^\d{12,13}$/.test(code))return;await stopScanner(false);$("barcode").value=code;await checkBarcode(code);}});
   camera=Camera.pickBestGuess();if(!camera)throw new Error("No camera was found on this device.");
   await camera.applySettings(BarcodeCapture.recommendedCameraSettings);await context.setFrameSource(camera);
   scannerMode="scandit";showScannerApp();message("Scandit is ready. Enter staff details, then start the camera.","good");
@@ -170,7 +170,7 @@ async function startScanner(){
  try{
   if(scannerMode==="html5"){
    await html5Scanner.start({facingMode:"environment"},{fps:12,qrbox:{width:280,height:150},aspectRatio:1.777},async decodedText=>{
-    if(busy||!scannerRunning)return;const code=String(decodedText||"").trim();if(!/^\\d{12,13}$/.test(code))return;
+    if(busy||!scannerRunning)return;const code=String(decodedText||"").trim();if(!/^\d{12,13}$/.test(code))return;
     await stopScanner(false);$("barcode").value=code;await checkBarcode(code);
    },()=>{});
   }else{
