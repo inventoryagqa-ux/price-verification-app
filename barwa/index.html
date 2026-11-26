@@ -177,7 +177,13 @@ async function startScanner(){
    await context.frameSource.switchToDesiredState(FrameSourceState.On);await barcodeCapture.setEnabled(true);
   }
   scannerRunning=true;$("stopButton").classList.remove("hidden");message("Camera ready. Place the barcode in view and hold it steady.","good");
- }catch(error){try{await stopScanner(false);}catch(_){}message("CAMERA FAILED: "+(error?.message||String(error)),"bad");}
+ }catch(error){
+  try{await stopScanner(false);}catch(_){}
+  if(scannerMode==="scandit"&&window.Html5Qrcode&&window.Html5QrcodeSupportedFormats){
+   try{html5Scanner=new Html5Qrcode("cameraView",{verbose:false,formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.UPC_A]});scannerMode="html5";message("Scandit could not start. The free camera fallback is ready. Tap SCAN BARCODE again.","good");}
+   catch(fallbackError){message("CAMERA FAILED: "+(error?.message||String(error)),"bad");}
+  }else message("CAMERA FAILED: "+(error?.message||String(error)),"bad");
+ }
  finally{$("scanButton").disabled=false;}
 }
 $("scanButton").addEventListener("click",startScanner);$("stopButton").addEventListener("click",()=>stopScanner(true));
