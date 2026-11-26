@@ -1,0 +1,65 @@
+name: Deploy Barwa Discount Checker
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build website with Scandit licence
+        env:
+          SCANDIT_LICENSE_KEY: ${{ secrets.SCANDIT_LICENSE_KEY }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import pathlib
+          import shutil
+
+          key = os.environ.get("SCANDIT_LICENSE_KEY", "").strip()
+          if not key:
+              raise SystemExit("Missing repository secret: SCANDIT_LICENSE_KEY")
+
+          output = pathlib.Path("_site")
+          shutil.copytree(
+              ".",
+              output,
+              ignore=shutil.ignore_patterns(".git", ".github", "_site")
+          )
+
+          page = output / "barwa" / "index.html"
+          source = page.read_text(encoding="utf-8")
+          placeholder = "__SCANDIT_LICENSE_KEY__"
+          if source.count(placeholder) != 1:
+              raise SystemExit("Expected one Scandit licence placeholder in barwa/index.html")
+          page.write_text(source.replace(placeholder, key), encoding="utf-8")
+          PY
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload website
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy website
+        id: deployment
+        uses: actions/deploy-pages@v4
