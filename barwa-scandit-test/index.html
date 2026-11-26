@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#123b63">
+  <title>Barwa Discount Checker - Scandit Test</title>
+  <style>
+    :root{--blue:#123b63;--pale:#eaf2fb;--border:#d8e0e9;--bg:#f3f6fa;--text:#172b42}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font:15px Arial,sans-serif}
+    header{background:var(--blue);color:#fff;text-align:center;padding:20px 14px}
+    header h1{font-size:22px;margin:0 0 6px}header p{font-size:13px;margin:0}
+    main{max-width:620px;margin:auto;padding:14px}
+    .card{background:#fff;padding:17px;border-radius:12px;margin-bottom:14px;box-shadow:0 2px 8px #1428460f}
+    h2{font-size:17px;margin:0 0 14px}
+    label{display:block;font-size:13px;font-weight:bold;margin:12px 0 6px}
+    input{width:100%;padding:13px;border:1px solid var(--border);border-radius:8px;font-size:16px;min-height:46px}
+    button{width:100%;min-height:46px;padding:12px;margin-top:10px;border:0;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer}
+    button:disabled{opacity:.55;cursor:not-allowed}
+    .primary{background:var(--blue);color:white}.secondary{background:var(--pale);color:var(--blue)}
+    #cameraView{width:100%;height:320px;min-height:240px;border-radius:10px;overflow:hidden;background:#101820}
+    #cameraView video{width:100%;height:100%;object-fit:cover}
+    #message{display:none;padding:12px;border-radius:8px;margin-bottom:14px;line-height:1.45;overflow-wrap:anywhere}
+    #message.info{display:block;background:#eaf2fb;color:#174a7e}
+    #message.good{display:block;background:#e8f6ed;color:#146c3c}
+    #message.bad{display:block;background:#fdecea;color:#a32018}
+    .hidden{display:none!important}.hint{font-size:12px;line-height:1.5;color:#5d6b7b}
+    .barcode{font-size:18px;font-weight:bold;overflow-wrap:anywhere;margin-top:5px}
+    .item{font-size:16px;font-weight:bold;line-height:1.4;overflow-wrap:anywhere;margin-top:5px}
+    .result{border-radius:10px;padding:18px;text-align:center;margin-top:12px}
+    .included{background:#e8f6ed;color:#146c3c}.excluded{background:#fdecea;color:#a32018}
+    .result strong{display:block;font-size:22px;line-height:1.25}
+    .result small{display:block;margin-top:8px;font-size:13px}
+    footer{text-align:center;color:#777;font-size:12px;padding:15px 10px 24px}
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "@scandit/web-datacapture-core": "https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-core@8.7.2/build/js/index.js",
+        "@scandit/web-datacapture-barcode": "https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-barcode@8.7.2/build/js/index.js",
+        "@scandit/web-datacapture-barcode/": "https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-barcode@8.7.2/"
+      }
+    }
+  </script>
+</head>
+<body>
+<header><h1>BARWA DISCOUNT CHECKER - SCANDIT TEST</h1><p>Separate scanner trial · Main Barwa app is unchanged</p></header>
+<main>
+  <div id="message" role="status" aria-live="polite"></div>
+  <section class="card" id="licenseCard">
+    <h2>1. Scandit Trial Licence</h2>
+    <label for="licenseKey">Paste your regenerated Scandit trial key</label>
+    <input id="licenseKey" type="password" autocomplete="off" placeholder="Scandit licence key">
+    <p class="hint">The key is kept in this browser tab's session storage and is not written into the GitHub source file. It is still used by the browser to initialize Scandit, so treat it as a client-side licence key.</p>
+    <button id="continueButton" class="primary" type="button">CONTINUE TO STAFF DETAILS</button>
+  </section>
+
+  <section class="card hidden" id="staffCard">
+    <h2>2. Staff Details</h2>
+    <label for="staff">Staff Number + Name</label>
+    <input id="staff" type="text" autocomplete="name" placeholder="Example: 12345 - Ali Ahmed">
+  </section>
+
+  <section class="card hidden" id="scannerCard">
+    <h2>3. Scan or Enter Barcode</h2>
+    <div id="cameraView"></div>
+    <button id="scanButton" class="primary" type="button">START SCANDIT SCANNER</button>
+    <button id="stopButton" class="secondary hidden" type="button">STOP CAMERA</button>
+    <label for="barcode">Barcode Number</label>
+    <input id="barcode" type="text" inputmode="numeric" autocomplete="off" placeholder="Scan or enter barcode">
+    <button id="searchButton" class="primary" type="button">CHECK DISCOUNT ELIGIBILITY</button>
+    <p class="hint">This test is configured for EAN-13 / UPC-A barcodes. Handheld scanner and manual entry are also supported.</p>
+  </section>
+
+  <section id="resultCard" class="card hidden">
+    <h2>4. Verification Result</h2>
+    <div class="hint">BARCODE</div><div id="resultBarcode" class="barcode"></div>
+    <div class="hint" style="margin-top:12px">GROUP</div><div id="resultGroup" class="item"></div>
+    <div class="hint" style="margin-top:12px">ITEM DESCRIPTION</div><div id="resultDescription" class="item"></div>
+    <div id="discountResult" class="result"><strong id="discountText"></strong><small id="saveStatus">Saving verification...</small></div>
+    <button id="newSearchButton" class="primary" type="button">SCAN NEXT ITEM</button>
+  </section>
+</main>
+<footer>Barwa Discount Checker · Scandit evaluation page</footer>
+
+<script type="module">
+"use strict";
+import { DataCaptureContext, Camera, DataCaptureView, FrameSourceState } from "@scandit/web-datacapture-core";
+import { BarcodeCapture, BarcodeCaptureSettings, BarcodeCaptureOverlay, Symbology, barcodeCaptureLoader } from "@scandit/web-datacapture-barcode";
+
+const API_URL = "https://script.google.com/macros/s/AKfycbx-knUul9MbdSUEV2WMItF8kQyJr_BtC-dw1OvFbYsu8vcftVytXXJy5NTo0Mt1n9TKpA/exec";
+const $ = id => document.getElementById(id);
+let context = null, camera = null, barcodeCapture = null, captureView = null;
+let scannerRunning = false, busy = false, resultTimer = null, requestNo = 0;
+
+function message(text,type="info"){$("message").textContent=text;$("message").className=type;}
+function clearMessage(){$("message").textContent="";$("message").className="";}
+function normalizeResponse(data){
+  if(!data || typeof data!=="object")throw new Error("Invalid response from Apps Script.");
+  if(data.error || data.success===false)throw new Error(data.error||data.message||"Request failed.");
+  return data;
+}
+function callApi(params,timeoutMs=20000){
+  return new Promise((resolve,reject)=>{
+    const callback="barwaCallback_"+Date.now()+"_"+(++requestNo);
+    const script=document.createElement("script"),url=new URL(API_URL);
+    let finished=false;
+    const timer=setTimeout(()=>finish(new Error("Server timed out. Please try again.")),timeoutMs);
+    function finish(error,data){
+      if(finished)return;finished=true;clearTimeout(timer);delete window[callback];script.remove();
+      error?reject(error):resolve(data);
+    }
+    window[callback]=data=>finish(null,data);
+    Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,String(v)));
+    url.searchParams.set("callback",callback);url.searchParams.set("_",String(Date.now()));
+    script.src=url.toString();script.async=true;
+    script.onerror=()=>finish(new Error("Could not connect to Apps Script. Check internet access and deployment permissions."));
+    document.head.appendChild(script);
+  });
+}
+function hideResult(){$("resultCard").classList.add("hidden");}
+function newSearch(){
+  clearTimeout(resultTimer);hideResult();$("barcode").value="";clearMessage();$("barcode").focus();
+}
+async function stopScanner(showMessage=true){
+  try{if(barcodeCapture)await barcodeCapture.setEnabled(false);}catch(_){}
+  try{if(context?.frameSource)await context.frameSource.switchToDesiredState(FrameSourceState.Off);}catch(_){}
+  scannerRunning=false;
+  $("stopButton").classList.add("hidden");
+  $("scanButton").disabled=false;
+  if(showMessage)message("Camera stopped.","info");
+}
+async function checkBarcode(value){
+  const barcode=String(value||"").trim();
+  if(!barcode){message("Please scan or enter a barcode.","bad");return;}
+  const staff=$("staff").value.trim();
+  if(!staff){message("Please enter staff number and name before scanning.","bad");$("staff").focus();return;}
+  if(busy)return;
+  clearTimeout(resultTimer);busy=true;$("searchButton").disabled=true;hideResult();
+  message("Checking barcode...","info");
+  try{
+    const data=normalizeResponse(await callApi({action:"search",barcode}));
+    const found=data.found===true||data.found==="true";
+    const status=found?"INCLUDED":"NOT INCLUDED";
+    $("resultBarcode").textContent=data.barcode||barcode;
+    $("resultGroup").textContent=data.groupName||"—";
+    $("resultDescription").textContent=data.description||"—";
+    $("discountText").textContent=found?"INCLUDED IN BARWA DISCOUNT":"NOT INCLUDED IN BARWA DISCOUNT";
+    $("discountResult").className="result "+(found?"included":"excluded");
+    $("saveStatus").textContent="Saving verification...";
+    $("resultCard").classList.remove("hidden");
+    message(found?"Item is included in Barwa Discount.":"Item is not included in Barwa Discount.",found?"good":"bad");
+    $("barcode").value=barcode;
+    try{
+      const payload={staff,barcode:data.barcode||barcode,groupName:data.groupName||"",description:data.description||"",status};
+      const saved=normalizeResponse(await callApi({action:"save",data:JSON.stringify(payload)}));
+      $("saveStatus").textContent=saved.message||"Verification saved successfully.";
+    }catch(saveError){
+      $("saveStatus").textContent="LOGGING FAILED: "+saveError.message;
+      message("Result found, but saving the verification failed. Please inform Inventory support.","bad");
+    }
+    resultTimer=setTimeout(newSearch,20000);
+  }catch(error){message("Search failed: "+error.message,"bad");}
+  finally{busy=false;$("searchButton").disabled=false;}
+}
+async function initializeScandit(){
+  if(context)return;
+  const key=$("licenseKey").value.trim();
+  if(!key){message("Please paste your regenerated Scandit trial key.","bad");$("licenseKey").focus();return;}
+  $("continueButton").disabled=true;
+  message("Initializing Scandit. The first load may take a little longer while its scanning engine downloads...","info");
+  try{
+    sessionStorage.setItem("barwaScanditTrialKey",key);
+    context=await DataCaptureContext.forLicenseKey(key,{
+      libraryLocation:"https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-barcode@8.7.2/sdc-lib/",
+      moduleLoaders:[barcodeCaptureLoader()]
+    });
+    const settings=new BarcodeCaptureSettings();
+    settings.enableSymbologies([Symbology.EAN13UPCA]);
+    settings.codeDuplicateFilter=-1;
+    barcodeCapture=await BarcodeCapture.forContext(context,settings);
+    const view=await DataCaptureView.forContext(context);
+    view.connectToElement($("cameraView"));
+    await view.setContext(context);
+    await BarcodeCaptureOverlay.withBarcodeCaptureForView(barcodeCapture,view);
+    barcodeCapture.addListener({
+      didScan:async(_mode,session)=>{
+        const scanned=session.newlyRecognizedBarcode?.data;
+        if(!scanned||busy)return;
+        const code=String(scanned).trim();
+        if(!/^\d{12,13}$/.test(code))return;
+        await stopScanner(false);
+        $("barcode").value=code;
+        await checkBarcode(code);
+      }
+    });
+    camera=Camera.pickBestGuess();
+    if(!camera)throw new Error("No camera was found on this device.");
+    await camera.applySettings(BarcodeCapture.recommendedCameraSettings);
+    await context.setFrameSource(camera);
+    $("licenseCard").classList.add("hidden");
+    $("staffCard").classList.remove("hidden");
+    $("scannerCard").classList.remove("hidden");
+    try{
+      $("staff").value=localStorage.getItem("barwaDiscountStaff")||"";
+      $("staff").addEventListener("change",()=>{try{localStorage.setItem("barwaDiscountStaff",$("staff").value.trim());}catch(_){}});
+    }catch(_){}
+    message("Scandit initialized. Enter staff details, then start the camera.","good");
+  }catch(error){
+    context=null;camera=null;barcodeCapture=null;
+    try{sessionStorage.removeItem("barwaScanditTrialKey");}catch(_){}
+    message("SCANDIT INITIALIZATION FAILED: "+(error?.message||String(error))+". Check the trial key, its allowed domain, and internet connection.","bad");
+  }finally{$("continueButton").disabled=false;}
+}
+async function startScanner(){
+  if(!context||scannerRunning||busy)return;
+  if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){message("Camera access requires HTTPS. Open this GitHub Pages page in Safari or Chrome.","bad");return;}
+  if(!$("staff").value.trim()){message("Please enter staff number and name before scanning.","bad");$("staff").focus();return;}
+  $("scanButton").disabled=true;clearMessage();message("Starting Scandit camera...","info");
+  try{
+    await context.frameSource.switchToDesiredState(FrameSourceState.On);
+    await barcodeCapture.setEnabled(true);
+    scannerRunning=true;
+    $("stopButton").classList.remove("hidden");
+    message("Camera ready. Place the EAN-13 barcode in view and hold it steady.","good");
+  }catch(error){
+    try{await stopScanner(false);}catch(_){}
+    message("CAMERA FAILED: "+(error?.message||String(error)),"bad");
+  }finally{$("scanButton").disabled=false;}
+}
+$("continueButton").addEventListener("click",initializeScandit);
+$("scanButton").addEventListener("click",startScanner);
+$("stopButton").addEventListener("click",()=>stopScanner(true));
+$("searchButton").addEventListener("click",()=>checkBarcode($("barcode").value));
+$("newSearchButton").addEventListener("click",newSearch);
+$("barcode").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();checkBarcode($("barcode").value);}});
+window.addEventListener("pagehide",()=>{try{if(context?.frameSource)context.frameSource.switchToDesiredState(FrameSourceState.Off);}catch(_){}});
+try{$("licenseKey").value=sessionStorage.getItem("barwaScanditTrialKey")||"";}catch(_){}
+</script>
+</body>
+</html>
