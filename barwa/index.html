@@ -98,7 +98,7 @@ let BarcodeCapture, BarcodeCaptureSettings, BarcodeCaptureOverlay, Symbology, ba
 const API_URL = "https://script.google.com/macros/s/AKfycbx-knUul9MbdSUEV2WMItF8kQyJr_BtC-dw1OvFbYsu8vcftVytXXJy5NTo0Mt1n9TKpA/exec";
 const $ = id => document.getElementById(id);
 let context=null,camera=null,barcodeCapture=null,scannerRunning=false,busy=false,resultTimer=null,requestNo=0;
-let scannerMode="",html5Scanner=null;
+let scannerMode="",html5Scanner=null,scanditRejected=false;
 function message(text,type="info"){$("message").textContent=text;$("message").className=type;}
 function clearMessage(){$("message").textContent="";$("message").className="";}
 function normalizeResponse(data){if(!data||typeof data!=="object")throw new Error("Invalid response from Apps Script.");if(data.error||data.success===false)throw new Error(data.error||data.message||"Request failed.");return data;}
@@ -134,6 +134,20 @@ function showScannerApp(){
  $("licenseCard").classList.add("hidden");$("staffCard").classList.remove("hidden");$("scannerCard").classList.remove("hidden");
  try{$("staff").value=localStorage.getItem("barwaDiscountStaff")||"";$("staff").addEventListener("change",()=>{try{localStorage.setItem("barwaDiscountStaff",$("staff").value.trim());}catch(_){}});}catch(_){}
 }
+async function activateHtml5Fallback(reason){
+ if(scannerMode==="html5"&&html5Scanner)return;
+ scanditRejected=true;
+ try{if(context?.frameSource)await context.frameSource.switchToDesiredState(FrameSourceState.Off);}catch(_){}
+ context=null;camera=null;barcodeCapture=null;
+ try{
+  if(!window.Html5Qrcode||!window.Html5QrcodeSupportedFormats)throw new Error("Free camera scanner library could not be loaded.");
+  html5Scanner=new Html5Qrcode("cameraView",{verbose:false,formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.UPC_A]});
+  scannerMode="html5";showScannerApp();
+  message((reason||"Scandit is unavailable.")+" Free camera fallback is ready. Barcode checking and verification logging are unchanged.","good");
+ }catch(error){
+  scannerMode="";message("SCANDIT LICENCE FAILED AND FREE CAMERA FALLBACK COULD NOT LOAD: "+(error?.message||String(error)),"bad");
+ }
+}
 async function initializeScandit(){
  try{
   if(!window.SDCCore||!window.SDCBarcode)throw new Error("Scandit libraries could not be loaded.");
@@ -143,6 +157,7 @@ async function initializeScandit(){
   if(!key||key==="__SCANDIT_LICENSE_KEY__")throw new Error("Scandit licence is not configured.");
   message("Initializing Scandit. Please wait...","info");
   context=await DataCaptureContext.forLicenseKey(key,{libraryLocation:"https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-barcode@8.7.2/sdc-lib/",moduleLoaders:[barcodeCaptureLoader()]});
+  context.addListener({didChangeStatus:(_ctx,status)=>{const code=Number(status?.code||0);if((code>=131671&&code<=131680)||[9,10,11,12,13,18,19].includes(code)){activateHtml5Fallback("Scandit licence/device validation failed (code "+code+").");}}});
   const settings=new BarcodeCaptureSettings();settings.enableSymbologies([Symbology.EAN13UPCA]);settings.codeDuplicateFilter=-1;
   barcodeCapture=await BarcodeCapture.forContext(context,settings);
   const view=await DataCaptureView.forContext(context);view.connectToElement($("cameraView"));await view.setContext(context);
@@ -150,17 +165,10 @@ async function initializeScandit(){
   barcodeCapture.addListener({didScan:async(_mode,session)=>{const scanned=session.newlyRecognizedBarcode?.data;if(!scanned||busy||!scannerRunning)return;const code=String(scanned).trim();if(!/^\d{12,13}$/.test(code))return;await stopScanner(false);$("barcode").value=code;await checkBarcode(code);}});
   camera=Camera.pickBestGuess();if(!camera)throw new Error("No camera was found on this device.");
   await camera.applySettings(BarcodeCapture.recommendedCameraSettings);await context.setFrameSource(camera);
+  if(scanditRejected)throw new Error("Scandit licence validation failed.");
   scannerMode="scandit";showScannerApp();message("Scandit is ready. Enter staff details, then start the camera.","good");
  }catch(error){
-  context=null;camera=null;barcodeCapture=null;
-  try{
-   if(!window.Html5Qrcode||!window.Html5QrcodeSupportedFormats)throw new Error("Free camera scanner library could not be loaded.");
-   html5Scanner=new Html5Qrcode("cameraView",{verbose:false,formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.UPC_A]});
-   scannerMode="html5";showScannerApp();
-   message("Scandit is unavailable on this device. Free camera fallback is ready; barcode checking and verification logging remain the same.","good");
-  }catch(fallbackError){
-   scannerMode="";message("SCANNER INITIALIZATION FAILED: "+(fallbackError?.message||String(fallbackError))+". Check internet access and reload the page.","bad");
-  }
+  await activateHtml5Fallback("Scandit is unavailable: "+(error?.message||String(error))+".");
  }
 }
 async function startScanner(){
