@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#123b63">
   <title>Barwa Discount Checker</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
   <style>
     :root{--blue:#123b63;--pale:#eaf2fb;--border:#d8e0e9;--bg:#f3f6fa;--text:#172b42}
     *{box-sizing:border-box}
@@ -143,44 +143,64 @@ async function checkBarcode(value) {
 }
 async function startScanner() {
   if(scannerRunning)return;
-  if(!window.isSecureContext || !navigator.mediaDevices?.getUserMedia){message("Camera access requires HTTPS. Open this GitHub Pages website in Chrome or Safari.","bad");return;}
-  if(!window.Html5Qrcode){message("Scanner library did not load. Check your internet connection.","bad");return;}
-  $("scanButton").disabled=true; clearMessage(); message("Checking available cameras...","info");
+  if(!window.isSecureContext || !navigator.mediaDevices?.getUserMedia){message("Camera access requires HTTPS. Open this GitHub Pages website in Safari or Chrome.","bad");return;}
+  if(!window.Quagga){message("Scanner library did not load. Check your internet connection and reload the page.","bad");return;}
+  $("scanButton").disabled=true; clearMessage(); message("Starting barcode scanner...","info");
   try {
-    const cameras=await Html5Qrcode.getCameras();
-    if(!cameras || !cameras.length)throw new Error("No camera was detected on this device.");
-    const rear=cameras.find(c=>/back|rear|environment|trás|trasera|arrière/i.test(c.label));
-    const camera=rear || cameras[cameras.length-1];
-    scanner=new Html5Qrcode("reader",{formatsToSupport:[
-      Html5QrcodeSupportedFormats.EAN_13
-    ],verbose:false});
     scanHandled=false;
-    await scanner.start(camera.id,{fps:15,qrbox:(w,h)=>({width:Math.min(360,Math.floor(w*.90)),height:Math.min(120,Math.floor(h*.40))}),disableFlip:true},
-      async decoded=>{
-        if(scanHandled)return;
-        const code=String(decoded||"").trim();
-        if(!code)return;
-        scanHandled=true; $("barcode").value=code;
-        const stoppingCamera = stopScanner(false);
-        await checkBarcode(code);
-        await stoppingCamera;
-      },()=>{});
-    scannerRunning=true; $("stopButton").classList.remove("hidden");
-    message("Camera ready. Point it at the product barcode.","good");
+    const target=$("reader");
+    target.replaceChildren();
+    await new Promise((resolve,reject)=>{
+      Quagga.init({
+        inputStream:{
+          name:"Barwa Discount Camera",
+          type:"LiveStream",
+          target,
+          constraints:{
+            facingMode:{ideal:"environment"},
+            width:{ideal:1280},
+            height:{ideal:720}
+          },
+          area:{top:"20%",right:"5%",left:"5%",bottom:"20%"}
+        },
+        locator:{patchSize:"medium",halfSample:true},
+        numOfWorkers:0,
+        frequency:10,
+        decoder:{readers:["ean_reader"],multiple:false},
+        locate:true
+      },err=>err?reject(err):resolve());
+    });
+    Quagga.offDetected(onBarcodeDetected);
+    Quagga.onDetected(onBarcodeDetected);
+    Quagga.start();
+    scannerRunning=true;
+    $("stopButton").classList.remove("hidden");
+    message("Camera ready. Hold the EAN-13 barcode steady inside the scanning area.","good");
   } catch(error) {
-    let detail=error.message||String(error);
-    if(error.name==="NotAllowedError"||error.name==="PermissionDeniedError")detail="Camera permission was denied. Allow camera access for this website in your browser settings.";
-    else if(error.name==="NotFoundError")detail="No usable camera was found. Check that your device camera is available.";
-    else if(error.name==="NotReadableError")detail="Camera is being used by another app. Close it and try again.";
-    message("CAMERA FAILED: "+detail,"bad");
-    if(scanner){try{await scanner.clear();}catch(_){} scanner=null;}
+    try{Quagga.stop();}catch(_){}
+    scannerRunning=false;
+    target.replaceChildren();
+    message("CAMERA FAILED: "+(error.message||String(error)),"bad");
   } finally {$("scanButton").disabled=false;}
 }
+async function onBarcodeDetected(result) {
+  if(scanHandled || busy || !result?.codeResult?.code)return;
+  const code=String(result.codeResult.code).trim();
+  if(!/^\\d{13}$/.test(code))return;
+  scanHandled=true;
+  $("barcode").value=code;
+  await stopScanner(false);
+  await checkBarcode(code);
+}
 async function stopScanner(show=true) {
-  if(scanner && scannerRunning){try{await scanner.stop();}catch(e){console.warn(e);}}
+  if(window.Quagga){
+    try{Quagga.offDetected(onBarcodeDetected);}catch(_){}
+    try{Quagga.stop();}catch(_){}
+  }
   scannerRunning=false;
-  if(scanner){try{scanner.clear();}catch(_){} scanner=null;}
-  $("reader").replaceChildren(); $("stopButton").classList.add("hidden"); $("scanButton").disabled=false;
+  $("reader").replaceChildren();
+  $("stopButton").classList.add("hidden");
+  $("scanButton").disabled=false;
   if(show)message("Camera stopped.","info");
 }
 function newSearch() {
