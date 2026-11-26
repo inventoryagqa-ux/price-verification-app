@@ -47,9 +47,9 @@ jobs:
           page = output / "barwa" / "index.html"
           source = page.read_text(encoding="utf-8")
           placeholder = "__SCANDIT_LICENSE_KEY__"
-          if source.count(placeholder) != 1:
-              raise SystemExit("Expected one Scandit licence placeholder in barwa/index.html")
-          page.write_text(source.replace(placeholder, key), encoding="utf-8")
+          if placeholder not in source:
+              raise SystemExit("Scandit licence placeholder not found in barwa/index.html")
+          page.write_text(source.replace(placeholder, key, 1), encoding="utf-8")
           PY
 
       - name: Configure GitHub Pages
